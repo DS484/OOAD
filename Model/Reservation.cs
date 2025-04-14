@@ -51,12 +51,41 @@ public class Reservation {
         // TODO implement here
     }
 
-    public void getReservations(DateTime startDate, DateTime endDate) {
-        // TODO implement here
+    public List<Reservation> getReservations(DateTime startDate, DateTime endDate)
+    {
+        List<Reservation> reservationList = new List<Reservation>();
+        foreach(Reservation r in reservationList)
+        {
+            if (startDate <= r.payment.getPaymentDate() &&
+                r.payment.getPaymentDate() <= endDate)
+            {
+                reservationList.Add(r);
+            }   
+        }
     }
 
-    public void getRevenueReport(DateTime startDate, DateTime endDate) {
-        // TODO implement here
+    public void getRevenueReport(DateTime startDate, DateTime endDate) 
+    {
+        List<Reservation> reservationList = getReservations(startDate, endDate);
+
+        for(int i = reservationList.Count - 1; i >= 0; i--) 
+        { 
+            Reservation reservation = reservationList[i];
+
+            string paymentStatus = reservation.payment?.getStatus();
+
+            if (paymentStatus == "Paid")
+            {
+                reservationList.Remove(reservation);
+            }
+        }
+
+        if (reservationList.Count > 0) {
+            return reservationList;
+        }
+        else {
+            throw new Exception("Not found revenue");
+        }
     }
 
     public string makePayment()
