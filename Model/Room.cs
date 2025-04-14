@@ -38,7 +38,8 @@ public class Room {
         return capacity >= guestCount;
     }
 
-    public void getId() {
+    public int getId() {
+        return id;
         // TODO implement here
     }
 

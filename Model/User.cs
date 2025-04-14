@@ -30,7 +30,8 @@ public class User {
         return true;
     }
 
-    public void getCustomerName() {
+    public string getCustomerName() {
+        return "";
         // TODO implement here
     }
 
