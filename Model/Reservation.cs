@@ -47,6 +47,11 @@ public class Reservation {
         } 
     }
 
+    public void getBookingSchedule(DateTime startDate, DateTime endDate)
+    {
+        // TODO implement here
+    }
+
     public void saveReservation() {
         // TODO implement here
     }
