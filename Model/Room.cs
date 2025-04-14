@@ -23,7 +23,7 @@ public class Room {
 
     public bool checkAvailable(DateTime checkIn, DateTime checkOut) {
         // TODO implement here
-        return true;
+        return RoomDao.checkAvailable(DateTime checkIn, DateTime checkOut);
     }
 
 

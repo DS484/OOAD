@@ -31,14 +31,15 @@ public class Hotel {
         {
             Hotel hotel = hotelLst[i];
 
-            // Duyệt danh sách phòng trong khách sạn đó từ cuối lên đầu
+            // Duyệt danh sách phòng trong khách sạn đó 
             for (int j = hotel.rooms.Count - 1; j >= 0; j--)
             {
                 Room room = hotel.rooms[j];
                 bool isAvailable = room.checkAvailable(checkIn, checkOut, guestCount);
                 if (!isAvailable)
                 {
-                    hotel.removeRoomAt(j); // an toàn khi duyệt từ cuối lên
+                    hotel.removeRoomAt(j); 
+                    // xóa những phòng không thỏa mãn điều kiện lọc khỏi kết quả tìm kiếm 
                 }
             }
 
@@ -67,7 +68,7 @@ public class Hotel {
 
 
     public List<Hotel> getHotelByAddress(string address) {
-        return null;
+        return HotelDAO.getHotelByAddress;
     }
 
 }

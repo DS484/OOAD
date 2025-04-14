@@ -11,7 +11,7 @@ namespace Hotel_Management.DAO
     internal class DBConnection
     {
 
-         //private string _connectionString = @"Server=TUNSS\SQLEXPRESS;Database=HOTEL_MANAGEMENT;Trusted_Connection=true";
+        //private string _connectionString = @"Server=TUNSS\SQLEXPRESS;Database=HOTEL_MANAGEMENT;Trusted_Connection=true";
         private string _connectionString = @"Server=DESKTOP-RO3E5IA\XDUNG;Database=New_Db;Trusted_Connection=true";
         //private string _connectionString = "Server=DUYPHONG;Database=HOTEL_MANAGEMENT;Trusted_Connection=true";
 
