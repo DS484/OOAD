@@ -24,8 +24,7 @@ public class Payment {
     
 
     public string getPaymentMethod() {
-        // TODO implement here
-        return "Cash";
+        return paymentMethod;
     }
 
 

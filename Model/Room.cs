@@ -23,17 +23,19 @@ public class Room {
 
     public bool checkAvailable(DateTime checkIn, DateTime checkOut) {
         // TODO implement here
-
         return true;
     }
 
 
-    public void checkAvailable(DateTime checkIn, DateTime checkOut, int guestCount) {
+    public bool checkAvailable(DateTime checkIn, DateTime checkOut, int guestCount) {
         // TODO implement here
+
+        return checkCapacity(guestCount) && checkAvailable(checkIn, checkOut);
     }
 
-    public void checkCapacity(int guestCount) {
+    public bool checkCapacity(int guestCount) {
         // TODO implement here
+        return capacity >= guestCount;
     }
 
     public void getId() {
