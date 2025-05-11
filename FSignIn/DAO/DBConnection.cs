@@ -8,7 +8,7 @@ using System.Data.SqlClient;
 using System.Data;
 namespace Hotel_Management.DAO
 {
-    internal class DBConnection
+    public class DBConnection
     {
         private string _connectionString = @"Server=Tieanh19\SQLEXPRESS;Database=HOTEL_MANAGEMENT;Trusted_Connection=true";
 
