@@ -68,7 +68,7 @@ public class Hotel {
 
 
     public List<Hotel> getHotelByAddress(string address) {
-        return HotelDAO.getHotelByAddress;
+        return null;
     }
 
 }
