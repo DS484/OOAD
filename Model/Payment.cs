@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Hotel_Management.DAO;
 
 public class Payment {
 
@@ -32,17 +33,17 @@ public class Payment {
     public string getStatus() {
         return status;
     }
+    public double getAmount()
+    {
+        return amount;
+    }
 
     public void setPaymentDate(DateTime paymentDate) {
         this.paymentDate = paymentDate;
     }
 
     public void setStatus(string status) {
-        // TODO implement here
-    }
-
-    public void savePayment() {
-        // TODO implement here
+        this.status = status;
     }
 
     public string processPayment(Reservation reservation) {
@@ -70,4 +71,19 @@ public class Payment {
         return "Payment success";
     }
 
+    public void savePayment()
+    {
+        string sql = "INSERT INTO Payment (Amount, PaymentDate, PaymentMethod, Status) " +
+                     "VALUES (@Amount, @PaymentDate, @PaymentMethod, @Status)";
+
+        object[] parameters = new object[]
+        {
+        amount,
+        paymentDate,
+        paymentMethod,
+        status
+        };
+
+        new DBConnection().ExecuteQuery(sql, parameters);
+    }
 }

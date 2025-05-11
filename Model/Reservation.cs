@@ -1,14 +1,17 @@
-
-using Model;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Linq;
-using System.Text;
+﻿
+using Hotel_Management.DAO;
+using System.Data;
 
 public class Reservation {
 
     public Reservation() {
+    }
+
+    public Reservation(Room room, DateTime checkIn, DateTime checkOut)
+    {
+        this.room = room;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
     }
 
     private int id;
@@ -25,57 +28,28 @@ public class Reservation {
 
     private Payment payment;
 
+    public Room Room { get => room; set => room = value; }
+    public User Customer { get => customer; set => customer = value; }
+    public int Id { get => id; set => id = value; }
+    public DateTime CheckIn { get => checkIn; set => checkIn = value; }
+    public DateTime CheckOut { get => checkOut; set => checkOut = value; }
+    public DateTime CreatedAt { get => createdAt; set => createdAt = value; }
+    public Payment Payment { get => payment; set => payment = value; }
 
-    public Reservation bookRoom(User customer, Room room, DateTime checkIn, DateTime CheckOut) {
-        bool check = customer.checkCustomerInfor();
+    public void bookRoom (User customer, Room room, DateTime checkIn, DateTime CheckOut) {
+        bool check = customer.checkCustomerInfo();
 
         if (!check)
         {
-            throw new Exception("Invalid Customer Infor");
+            throw new Exception("Thông tin khách hàng không hợp lệ !");
         }
         else
         {
-            bool isAvailable = room.checkAvailable(checkIn, checkOut);
-            if (isAvailable)
-            {
-                saveReservation();
-                return this;
-            }
-            else
-            {
-                throw new Exception("Room Not Available");
-            }
+
+            Reservation newReservation = new Reservation(room, checkIn, checkOut);
+            newReservation.saveReservation();
+            display("Thanh toán để hoàn tất đặt phòng !");
         } 
-    }
-
-    public List<ReservationDTO> getBookingSchedule(Hotel hotel, DateTime startDate, DateTime endDate)
-    {
-        List<Reservation> reservations = getReservations(hotel, startDate, endDate); 
-        if (reservations.Count == 0)
-        {
-            throw new Exception("Not Found Reservation");
-        }
-        else
-        {
-            List<ReservationDTO> reservationDTOs = new List<ReservationDTO>();
-            foreach (Reservation reservation in reservations)
-            {
-                int roomId = reservation.room.getId();
-                string customername = reservation.customer.getCustomerName();
-                reservationDTOs.Add(new ReservationDTO(reservation.id,reservation.createdAt,roomId, customername));
-            }
-            return reservationDTOs;
-        }
-        
-
-    }
-
-    public void saveReservation() {
-        // TODO implement here
-    }
-
-    public List<Reservation> getReservations(Hotel hotel, DateTime startDate, DateTime endDate) {
-        return null;
     }
 
     public List<Reservation> getReservations(DateTime startDate, DateTime endDate)
@@ -83,44 +57,233 @@ public class Reservation {
         List<Reservation> reservationList = new List<Reservation>();
         foreach(Reservation r in reservationList)
         {
-            if (startDate <= r.payment.getPaymentDate() &&
-                r.payment.getPaymentDate() <= endDate)
+            if (startDate <= r.Payment.getPaymentDate() &&
+                r.Payment.getPaymentDate() <= endDate)
             {
                 reservationList.Add(r);
             }   
         }
+
+        return reservationList;
     }
 
-    public void getRevenueReport(DateTime startDate, DateTime endDate) 
+    public void getRevenueReport(DateTime startDate, DateTime endDate, Hotel hotel) 
     {
-        List<Reservation> reservationList = getReservations(startDate, endDate);
+        List<Reservation> reservationResult = getReservationsByHotel (startDate, endDate, hotel);
+        double totalRevenue = 0;
 
-        for(int i = reservationList.Count - 1; i >= 0; i--) 
-        { 
-            Reservation reservation = reservationList[i];
-
-            string paymentStatus = reservation.payment?.getStatus();
-
-            if (paymentStatus == "Paid")
-            {
-                reservationList.Remove(reservation);
-            }
+        foreach (Reservation reservation in reservationResult)
+        {
+             totalRevenue += reservation.getPaymentAmount();
         }
+        
+        if (totalRevenue > 0) {
 
-        if (reservationList.Count > 0) {
-            return reservationList;
+            display(totalRevenue);
+        } 
+        else
+        {
+            display("Không có dữ liệu doanh thu");
         }
-        else {
-            throw new Exception("Not found revenue");
-        }
+    }
+    private double getPaymentAmount()
+    {
+        double paymentAmount = payment.getAmount();
+        return paymentAmount;
     }
 
     public string makePayment()
     {
-        payment = new Payment();
-        return payment.processPayment(this);
+        Payment = new Payment();
+        return Payment.processPayment(this);
     }
 
-    
+    public void saveReservation()
+    {
+        // Bước 1: Lưu thông tin đặt phòng vào bảng Reservation
+        string sqlReservation = @"
+        INSERT INTO Reservation (RoomId, CheckIn, CheckOut, CreatedAt, CustomerId)
+        VALUES (@RoomId, @CheckIn, @CheckOut, @CreatedAt, @CustomerId);
+        SELECT SCOPE_IDENTITY();";
 
+        object[] parametersReservation = new object[]
+        {
+        room.Id,
+        checkIn,
+        checkOut,
+        DateTime.Now,
+        customer.Id
+        };
+
+        var reservationId = new DBConnection().ExecuteQuery(sqlReservation, parametersReservation).Rows[0][0];
+
+        this.id = Convert.ToInt32(reservationId);
+    }
+
+    internal List<Reservation> findReservations(int userId)
+    {
+        List<Reservation> reservations = new List<Reservation>();
+
+        string sql = @"
+        SELECT r.Id AS ReservationId, r.CheckIn, r.CheckOut, r.CreatedAt, 
+               rm.Id AS RoomId, rm.RoomType, rm.Price, 
+               h.Id AS HotelId, h.Name AS HotelName, h.Address AS HotelAddress, h.Status AS HotelStatus
+        FROM Reservation r
+        JOIN Room rm ON r.RoomId = rm.Id
+        JOIN Hotel h ON rm.HotelId = h.Id
+        WHERE r.UserId = @UserId";
+
+        object[] parameters = new object[] { userId };
+
+        DataTable dt = new DBConnection().ExecuteQuery(sql, parameters);
+
+        foreach (DataRow row in dt.Rows)
+        {
+            Room room = new Room
+            {
+                Id = Convert.ToInt32(row["RoomId"]),
+                RoomNumber = Convert.ToInt32(row["RoomId"]),
+                Price = Convert.ToDouble(row["Price"]),
+            };
+
+            Hotel hotel = new Hotel
+            {
+                Id = Convert.ToInt32(row["HotelId"]),
+                Name = row["HotelName"].ToString(),
+                Address = row["HotelAddress"].ToString(),
+                Status = row["HotelStatus"].ToString()
+            };
+
+            Reservation reservation = new Reservation
+            {
+                Id = Convert.ToInt32(row["ReservationId"]),
+                CheckIn = Convert.ToDateTime(row["CheckIn"]),
+                CheckOut = Convert.ToDateTime(row["CheckOut"]),
+                CreatedAt = Convert.ToDateTime(row["CreatedAt"]),
+                Room = room,     // Gán thông tin phòng
+                                 // Không cần gán thông tin User, vì tìm theo UserId đã có
+            };
+
+            reservations.Add(reservation); // Thêm đối tượng Reservation vào danh sách
+        }
+
+        return reservations; 
+    }
+
+    private List<Reservation> getReservationsByHotel(DateTime startDate, DateTime endDate, Hotel hotel)
+    {
+        List<Reservation> reservations = new List<Reservation>();
+
+        string sql = @"
+        SELECT r.Id AS ReservationId, r.CheckIn, r.CheckOut, r.CreatedAt, 
+               rm.Id AS RoomId, rm.RoomType, rm.Price, 
+               h.Id AS HotelId, h.Name AS HotelName, h.Address AS HotelAddress, h.Status AS HotelStatus
+        FROM Reservation r
+        JOIN Room rm ON r.RoomId = rm.Id
+        JOIN Hotel h ON rm.HotelId = h.Id
+        WHERE h.Id = @HotelId
+        AND r.CheckIn >= @StartDate AND r.CheckOut <= @EndDate";
+
+        object[] parameters = new object[]
+        {
+        hotel.Id,
+        startDate,
+        endDate
+        };
+
+        DataTable dt = new DBConnection().ExecuteQuery(sql, parameters);
+
+        foreach (DataRow row in dt.Rows)
+        {
+            Room room = new Room
+            {
+                Id = Convert.ToInt32(row["RoomId"]),
+                RoomNumber = Convert.ToInt32(row["RoomNumber"]),
+                Price = Convert.ToDouble(row["Price"]),
+            };
+
+            Hotel hotelData = new Hotel
+            {
+                Id = Convert.ToInt32(row["HotelId"]),
+                Name = row["HotelName"].ToString(),
+                Address = row["HotelAddress"].ToString(),
+                Status = row["HotelStatus"].ToString()
+            };
+
+            Reservation reservation = new Reservation
+            {
+                Id = Convert.ToInt32(row["ReservationId"]),
+                CheckIn = Convert.ToDateTime(row["CheckIn"]),
+                CheckOut = Convert.ToDateTime(row["CheckOut"]),
+                CreatedAt = Convert.ToDateTime(row["CreatedAt"]),
+                Room = room,
+            };
+
+            reservations.Add(reservation);
+        }
+
+        return reservations;
+    }
+
+
+    public List<Reservation> getReservations(Hotel hotel, DateTime startDate, DateTime endDate)
+    {
+        List<Reservation> reservations = new List<Reservation>();
+
+        string sql = @"
+        SELECT r.Id AS ReservationId, r.CheckIn, r.CheckOut, r.CreatedAt, 
+               rm.Id AS RoomId, rm.RoomType, rm.Price, 
+               h.Id AS HotelId, h.Name AS HotelName, h.Address AS HotelAddress, h.Status AS HotelStatus
+        FROM Reservation r
+        JOIN Room rm ON r.RoomId = rm.Id
+        JOIN Hotel h ON rm.HotelId = h.Id
+        WHERE h.Id = @HotelId
+        AND r.CheckIn >= @StartDate AND r.CheckOut <= @EndDate";
+
+        object[] parameters = new object[]
+        {
+        hotel.Id,
+        startDate,
+        endDate
+        };
+
+        DataTable dt = new DBConnection().ExecuteQuery(sql, parameters);
+
+        foreach (DataRow row in dt.Rows)
+        {
+            Room room = new Room
+            {
+                Id = Convert.ToInt32(row["RoomId"]),
+                RoomNumber = Convert.ToInt32(row["RoomId"]),
+                Price = Convert.ToDouble(row["Price"]),
+            };
+
+            Hotel hotelData = new Hotel
+            {
+                Id = Convert.ToInt32(row["HotelId"]),
+                Name = row["HotelName"].ToString(),
+                Address = row["HotelAddress"].ToString(),
+                Status = row["HotelStatus"].ToString()
+            };
+
+            Reservation reservation = new Reservation
+            {
+                Id = Convert.ToInt32(row["ReservationId"]),
+                CheckIn = Convert.ToDateTime(row["CheckIn"]),
+                CheckOut = Convert.ToDateTime(row["CheckOut"]),
+                CreatedAt = Convert.ToDateTime(row["CreatedAt"]),
+                Room = room,
+            };
+
+            reservations.Add(reservation);
+        }
+
+        return reservations;
+    }
+
+
+    private void display(Object obj)
+    {
+        throw new NotImplementedException();
+    }
 }
