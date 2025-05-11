@@ -21,12 +21,21 @@ public class Payment {
 
     private VietQRProcess vietQRProcess;
 
-    
+    public DateTime getPaymentDate() {
+        return paymentDate;
+    }
 
     public string getPaymentMethod() {
         return paymentMethod;
     }
 
+    public string getStatus() {
+        return status;
+    }
+
+    public void setPaymentDate(DateTime paymentDate) {
+        this.paymentDate = paymentDate;
+    }
 
     public void setStatus(string status) {
         // TODO implement here
